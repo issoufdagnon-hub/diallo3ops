@@ -1,15 +1,28 @@
 <!doctype html>
 <html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="theme-color" content="#0f766e" />
-    <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
-    <title>DIALLO 3 OPÉRATEURS</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f766e" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <title>DIALLO 3 OPÉRATEURS</title>
+  <script>
+    // Diagnostic : affiche l'erreur à l'écran si l'application ne démarre pas.
+    function afficherErreur(texte) {
+      setTimeout(function () {
+        var r = document.getElementById('root');
+        if (r && !r.innerHTML.trim()) {
+          r.innerHTML = '<pre style="padding:16px;white-space:pre-wrap;color:#b91c1c;font-family:system-ui">Erreur au démarrage : ' + texte + '</pre>';
+        }
+      }, 300);
+    }
+    window.addEventListener('error', function (e) { afficherErreur(e.message || 'inconnue'); });
+    window.addEventListener('unhandledrejection', function (e) { afficherErreur(String((e.reason && e.reason.message) || e.reason)); });
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
 </html>
