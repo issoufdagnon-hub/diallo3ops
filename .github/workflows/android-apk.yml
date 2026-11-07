@@ -6,6 +6,8 @@ on:
 jobs:
   apk:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -51,3 +53,13 @@ jobs:
         with:
           name: diallo3ops-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publier l'APK dans une Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk diallo3ops-${{ github.run_number }}.apk
+          gh release create "v${{ github.run_number }}" "diallo3ops-${{ github.run_number }}.apk" \
+            --title "APK DIALLO 3 OPERATEURS v${{ github.run_number }}" \
+            --notes "Télécharger le fichier .apk et l'installer sur le téléphone." \
+            --repo "${{ github.repository }}"
