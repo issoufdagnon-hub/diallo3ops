@@ -29,8 +29,19 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      - name: Configurer la signature fixe
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > android/app/fixe.keystore
+          cat scripts/signing.gradle >> android/app/build.gradle
+
       - name: Compiler l'APK
         working-directory: android
+        env:
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
