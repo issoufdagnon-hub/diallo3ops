@@ -1,6 +1,9 @@
 // sauvegarde.js : sauvegarde, rappel, vérification et restauration (IndexedDB).
 import { openDatabase } from './database.js';
 import * as ledger from '../domain/ledger.js';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 export const APPLICATION = 'DIALLO3OPS';
 export const FORMAT = 2;
@@ -32,11 +35,26 @@ export async function construireSauvegarde() {
   };
 }
 
-// Partage Android si possible, sinon téléchargement. Renvoie null si l'utilisateur annule.
+// Sur Android (APK) : écriture dans le cache puis fenêtre de partage native.
+// Dans le navigateur (PWA) : partage web si possible, sinon téléchargement.
 export async function produireFichier(prefixe) {
   const s = await construireSauvegarde();
-  const blob = new Blob([JSON.stringify(s)], { type: 'application/json' });
+  const contenuFichier = JSON.stringify(s);
   const nom = `DIALLO3OPS_${prefixe}_${s.date.slice(0, 10)}_${s.date.slice(11, 13)}h${s.date.slice(14, 16)}.json`;
+
+  if (Capacitor.isNativePlatform()) {
+    const ecrit = await Filesystem.writeFile({
+      path: nom, data: contenuFichier, directory: Directory.Cache, encoding: Encoding.UTF8,
+    });
+    try {
+      await Share.share({ title: 'Sauvegarde DIALLO 3 OPÉRATEURS', url: ecrit.uri, dialogTitle: 'Enregistrer la sauvegarde' });
+    } catch {
+      return null;
+    }
+    return s;
+  }
+
+  const blob = new Blob([contenuFichier], { type: 'application/json' });
   const fichier = new File([blob], nom, { type: 'application/json' });
   if (navigator.canShare && navigator.canShare({ files: [fichier] })) {
     try {
