@@ -26,7 +26,7 @@ export async function journaliser(trace) {
 export async function construireSauvegarde() {
   const db = await openDatabase();
   const [mouvements, transferts, operations, journal] = await Promise.all(MAGASINS.map((m) => db.getAll(m)));
-  const contenu = JSON.stringify({ mouvements, transferts, operations, journal });
+  const contenu = JSON.stringify({ mouvements, transferts, operations, journal_audit: journal });
   const date = new Date().toISOString();
   return {
     application: APPLICATION, format: FORMAT, date,
@@ -112,7 +112,7 @@ export async function verifierFichier(texte) {
   const donnees = JSON.parse(s.contenu);
   const listes = {};
   for (const m of MAGASINS) {
-    listes[m] = donnees[m] ?? [];
+    listes[m] = donnees[m] ?? (m === 'journal_audit' ? donnees.journal : undefined) ?? [];
     if (!Array.isArray(listes[m])) throw new Error('Structure des données incorrecte.');
   }
   if (listes.journal_audit.length !== s.nombreEntrees) throw new Error('Le nombre d’entrées ne correspond pas à l’en-tête.');
