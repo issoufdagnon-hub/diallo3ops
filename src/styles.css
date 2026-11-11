@@ -50,3 +50,6 @@ button.actif { background: #0f766e; }
 
 .carte-op strong { display: block; font-size: 18px; }
 .carte-op span { display: block; margin-top: 4px; }
+
+.alerte-inactif { color: #b45309; font-size: 12px; font-weight: 600; }
+.recharge-recente { margin-top: 6px; }

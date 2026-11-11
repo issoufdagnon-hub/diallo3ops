@@ -113,6 +113,19 @@ function Bord({ solde, mouvements, transferts, actifs, filtres, setFiltres, setO
   const payes = actifs.filter((t) => t.statutPaiement === 'PAYE').length;
   const annules = transferts.filter((t) => t.statutTransfert === 'ANNULE').length;
   const rechargements = mouvements.filter((m) => m.type === 'RECHARGEMENT').reduce((s, m) => s + m.montant, 0);
+  const dernierRecharge = mouvements
+    .filter((m) => m.type === 'RECHARGEMENT')
+    .sort((x, y) => y.dateHeure.localeCompare(x.dateHeure))[0];
+
+  // Numéro sans transfert actif depuis plus de 7 jours : simple information, rien n'est bloqué.
+  const DELAI_INACTIF = 7 * 86400000;
+  const maintenant = Date.now();
+  const dernierParNumero = new Map();
+  transferts.filter((t) => t.statutTransfert === 'ACTIF').forEach((t) => {
+    const d = Date.parse(t.dateCreation);
+    if (!dernierParNumero.has(t.numero) || d > dernierParNumero.get(t.numero)) dernierParNumero.set(t.numero, d);
+  });
+  const inactif = (numero) => dernierParNumero.has(numero) && maintenant - dernierParNumero.get(numero) > DELAI_INACTIF;
 
   // Solde restant après chaque transfert, calculé sur le journal des mouvements.
   const restantPar = new Map();
@@ -141,7 +154,14 @@ function Bord({ solde, mouvements, transferts, actifs, filtres, setFiltres, setO
         <div className="carte"><span className="info">Payés</span><strong className="paye">{payes}</strong></div>
         <div className="carte"><span className="info">Non payés</span><strong className="non-paye">{actifs.length - payes}</strong></div>
         <div className="carte"><span className="info">Annulés</span><strong>{annules}</strong></div>
-        <div className="carte"><span className="info">Total rechargé</span><strong>{formaterFCFA(rechargements)}</strong></div>
+        <div className="carte"><span className="info">Total rechargé</span><strong>{formaterFCFA(rechargements)}</strong>
+          {dernierRecharge && (
+            <div className="recharge-recente">
+              <span style={{ color: '#b91c1c', fontWeight: 700 }}>+{formaterFCFA(dernierRecharge.montant)}</span>{' '}
+              <small className="info">le {dateFr(dernierRecharge.dateHeure)}</small>
+            </div>
+          )}
+        </div>
       </div>
       <div className="bloc-recherche">
         <input placeholder="Rechercher un nom ou un numéro" value={filtres.recherche}
@@ -151,7 +171,9 @@ function Bord({ solde, mouvements, transferts, actifs, filtres, setFiltres, setO
       <div className="tr tr-tete"><div>Bénéficiaire</div><div>Envoyé</div><div>Restant</div><div>Date</div><div></div></div>
       {liste.map((t) => (
         <div className={`tr ${t.statutTransfert !== 'ACTIF' ? 'annule' : ''}`} key={t.id}>
-          <div><strong>{t.nom}</strong><br /><small className="info">{t.numero}</small></div>
+          <div><strong>{t.nom}</strong><br /><small className="info">{t.numero}</small>
+            {inactif(t.numero) && <><br /><span className="alerte-inactif">Sans transfert depuis 7 jours</span></>}
+          </div>
           <div className="envoye">{formaterFCFA(t.montant)}</div>
           <div className="restant">{restantPar.has(t.id) ? formaterFCFA(restantPar.get(t.id)) : '—'}</div>
           <div><small className="info">{dateFr(t.dateCreation)}</small></div>
