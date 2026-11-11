@@ -46,6 +46,9 @@ export default function Operateur({ operateur, onRetour }) {
   }
 
   const solde = soldeOperateur(mouvements, operateur);
+  const dernierRechargeSolde = mouvements
+    .filter((m) => m.type === 'RECHARGEMENT')
+    .sort((x, y) => y.dateHeure.localeCompare(x.dateHeure))[0];
   const actifs = transferts.filter((t) => t.statutTransfert === 'ACTIF');
 
   return (
@@ -66,7 +69,17 @@ export default function Operateur({ operateur, onRetour }) {
 
       {onglet === 'solde' && (
         <>
-          <div className="carte"><span className="info">Solde disponible</span><div className="gros">{formaterFCFA(solde)}</div></div>
+          <div className="carte"><span className="info">Solde disponible</span><div className="gros">{formaterFCFA(solde)}</div>
+            <div className="recharge-recente">
+              <span className="info">Total rechargé : {formaterFCFA(mouvements.filter((m) => m.type === 'RECHARGEMENT').reduce((x, m) => x + m.montant, 0))}</span>
+              {dernierRechargeSolde && (
+                <div>
+                  <span style={{ color: '#b91c1c', fontWeight: 700 }}>Dernière recharge : +{formaterFCFA(dernierRechargeSolde.montant)}</span>{' '}
+                  <small className="info">le {dateFr(dernierRechargeSolde.dateHeure)}</small>
+                </div>
+              )}
+            </div>
+          </div>
           {mouvements.length === 0 ? (
             <FormMontant libelle="Solde de départ" bouton="Définir le solde initial" disabled={occupe}
               onSubmit={(montant) => agir(() => enregistrerSoldeInitial({ operateur, montant, cle: nouvelleCle() }), 'Solde initial enregistré.')} />
