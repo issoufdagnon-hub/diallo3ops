@@ -56,10 +56,21 @@ export async function enregistrerActivation(deviceId) {
 }
 
 // Vérifie si l'app est déjà activée (et que le deviceId correspond).
+// Si l'app a déjà des données (mouvements existants), elle est considérée
+// comme une installation légitime antérieure et est activée automatiquement.
 export async function estActivee() {
   const db = await openDatabase();
   const enreg = await db.get(STORE, CLE_ACTIVATION);
-  if (!enreg?.valeur) return false;
-  const deviceId = await obtenirDeviceId();
-  return enreg.valeur.deviceId === deviceId;
+  if (enreg?.valeur) {
+    const deviceId = await obtenirDeviceId();
+    return enreg.valeur.deviceId === deviceId;
+  }
+  // Auto-activer les installations existantes qui ont déjà des données
+  const nbMouvements = await db.count('mouvements');
+  if (nbMouvements > 0) {
+    const deviceId = await obtenirDeviceId();
+    await enregistrerActivation(deviceId);
+    return true;
+  }
+  return false;
 }
