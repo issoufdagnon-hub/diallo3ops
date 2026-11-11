@@ -26,6 +26,11 @@ jobs:
       - name: Construire le site (dist)
         run: npm run build
 
+      - name: Injecter le secret d'activation
+        env:
+          ACTIVATION_SECRET: ${{ secrets.ACTIVATION_SECRET }}
+        run: node scripts/inject-secret.js
+
       - name: Générer le projet Android
         run: |
           npx cap add android

@@ -1,0 +1,23 @@
+name: Générer un code d'activation
+on:
+  workflow_dispatch:
+    inputs:
+      device_id:
+        description: "Identifiant de l'appareil (affiché sur l'écran d'activation)"
+        required: true
+        type: string
+
+jobs:
+  generer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Générer le code
+        env:
+          ACTIVATION_SECRET: ${{ secrets.ACTIVATION_SECRET }}
+        run: node scripts/generer-code.js "${{ inputs.device_id }}"
