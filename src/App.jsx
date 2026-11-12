@@ -90,7 +90,7 @@ export default function App() {
         const resume = `${v.nombreMouvements} mouvement(s), ${v.nombreTransferts} transfert(s)`;
         if (!window.confirm(`Restaurer la sauvegarde du ${v.date.slice(0, 10)} (${resume}) ? Les données actuelles seront remplacées. Une sauvegarde de l'état actuel est d'abord demandée.`)) return;
         const avant = await produireFichier('AVANT_RESTAURATION');
-        if (!avant) return ouvrirAccueil('Restauration annulée : la sauvegarde de sécurité n'a pas été enregistrée.');
+        if (!avant) return ouvrirAccueil("Restauration annulée : la sauvegarde de sécurité n'a pas été enregistrée.");
         await restaurer(v);
         setBloque(false);
         setEcran('creation');
