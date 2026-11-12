@@ -3,7 +3,7 @@ import { OPERATEURS } from '../domain/ledger.js';
 export default function Accueil({ alertes, rappel, message, onOuvrir, onParametres, onSauvegarder, onRestaurer }) {
   return (
     <main>
-      <h1>DIALLO 3 OPÉRATEURS</h1>
+      <h1>Gestion Crédit 3 Opérateurs</h1>
       {alertes.length > 0 && (
         <div className="carte alerte">
           Anomalie détectée : {alertes[0]}. Ne faites pas de nouvelle opération avant vérification. Consultez le journal.

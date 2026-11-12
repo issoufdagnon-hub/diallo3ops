@@ -47,7 +47,7 @@ export async function produireFichier(prefixe) {
       path: nom, data: contenuFichier, directory: Directory.Cache, encoding: Encoding.UTF8,
     });
     try {
-      await Share.share({ title: 'Sauvegarde DIALLO 3 OPÉRATEURS', url: ecrit.uri, dialogTitle: 'Enregistrer la sauvegarde' });
+      await Share.share({ title: 'Sauvegarde Gestion Crédit 3 Opérateurs', url: ecrit.uri, dialogTitle: 'Enregistrer la sauvegarde' });
     } catch {
       return null;
     }
@@ -58,7 +58,7 @@ export async function produireFichier(prefixe) {
   const fichier = new File([blob], nom, { type: 'application/json' });
   if (navigator.canShare && navigator.canShare({ files: [fichier] })) {
     try {
-      await navigator.share({ files: [fichier], title: 'Sauvegarde DIALLO 3 OPÉRATEURS' });
+      await navigator.share({ files: [fichier], title: 'Sauvegarde Gestion Crédit 3 Opérateurs' });
     } catch (e) {
       if (e.name === 'AbortError') return null;
       telechargerAncre(blob, nom);

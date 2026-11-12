@@ -107,7 +107,7 @@ export default function App() {
   if (ecran === 'dejaOuvert') return (
     <main>
       <h1>Déjà ouverte</h1>
-      <p className="info">DIALLO 3 OPÉRATEURS est déjà ouverte dans un autre onglet. Fermez l'autre onglet, puis rechargez cette page.</p>
+      <p className="info">Gestion Crédit 3 Opérateurs est déjà ouverte dans un autre onglet. Fermez l'autre onglet, puis rechargez cette page.</p>
       <button onClick={() => window.location.reload()}>Recharger</button>
     </main>
   );
