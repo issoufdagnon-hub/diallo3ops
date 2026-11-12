@@ -3,9 +3,11 @@ import LockScreen from './components/LockScreen.jsx';
 import Accueil from './components/Accueil.jsx';
 import Operateur from './components/Operateur.jsx';
 import { Parametres } from './components/Parametres.jsx';
+import Activation from './components/Activation.jsx';
 import { demanderStockagePersistant, verifierIntegriteBase } from './db/repository.js';
 import { verifierFichier, restaurer, produireFichier, sauvegarderManuellement, rappelSauvegarde } from './db/sauvegarde.js';
 import { lirePinEtTentatives } from './db/pinRepository.js';
+import { estActivee, obtenirDeviceId } from './security/activation.js';
 
 export default function App() {
   const [ecran, setEcran] = useState('chargement');
@@ -14,27 +16,49 @@ export default function App() {
   const [rappel, setRappel] = useState('');
   const [message, setMessage] = useState('');
   const [bloque, setBloque] = useState(false);
+  const [deviceId, setDeviceId] = useState('');
 
-  // Vérifie qu'une seule fenêtre de l'application est ouverte.
+  // Vérifie l'activation puis qu'une seule fenêtre est ouverte.
   useEffect(() => {
     let canal = null;
     let autre = false;
-    if ('BroadcastChannel' in window) {
-      canal = new BroadcastChannel('diallo3ops-onglets');
-      canal.onmessage = (ev) => {
-        if (ev.data === 'ping') canal.postMessage('pong');
-        if (ev.data === 'pong') autre = true;
-      };
-      canal.postMessage('ping');
-    }
-    const t = setTimeout(async () => {
-      if (autre) return setEcran('dejaOuvert');
-      demanderStockagePersistant();
-      const { empreinte } = await lirePinEtTentatives();
-      setEcran(empreinte ? 'verrou' : 'creation');
-    }, 300);
-    return () => { clearTimeout(t); canal?.close(); };
+
+    (async () => {
+      // Vérifier l'activation d'abord
+      const id = await obtenirDeviceId();
+      setDeviceId(id);
+      const active = await estActivee();
+      if (!active) {
+        setEcran('activation');
+        return;
+      }
+
+      // Vérifier un seul onglet
+      if ('BroadcastChannel' in window) {
+        canal = new BroadcastChannel('diallo3ops-onglets');
+        canal.onmessage = (ev) => {
+          if (ev.data === 'ping') canal.postMessage('pong');
+          if (ev.data === 'pong') autre = true;
+        };
+        canal.postMessage('ping');
+      }
+      setTimeout(async () => {
+        if (autre) return setEcran('dejaOuvert');
+        demanderStockagePersistant();
+        const { empreinte } = await lirePinEtTentatives();
+        setEcran(empreinte ? 'verrou' : 'creation');
+      }, 300);
+    })();
+
+    return () => { canal?.close(); };
   }, []);
+
+  // Après activation réussie, continuer vers le PIN
+  async function apresActivation() {
+    demanderStockagePersistant();
+    const { empreinte } = await lirePinEtTentatives();
+    setEcran(empreinte ? 'verrou' : 'creation');
+  }
 
   async function ouvrirAccueil(msg = '') {
     setMessage(msg);
@@ -66,7 +90,7 @@ export default function App() {
         const resume = `${v.nombreMouvements} mouvement(s), ${v.nombreTransferts} transfert(s)`;
         if (!window.confirm(`Restaurer la sauvegarde du ${v.date.slice(0, 10)} (${resume}) ? Les données actuelles seront remplacées. Une sauvegarde de l'état actuel est d'abord demandée.`)) return;
         const avant = await produireFichier('AVANT_RESTAURATION');
-        if (!avant) return ouvrirAccueil('Restauration annulée : la sauvegarde de sécurité n’a pas été enregistrée.');
+        if (!avant) return ouvrirAccueil('Restauration annulée : la sauvegarde de sécurité n'a pas été enregistrée.');
         await restaurer(v);
         setBloque(false);
         setEcran('creation');
@@ -79,6 +103,7 @@ export default function App() {
   }
 
   if (ecran === 'chargement') return <main><p className="info">Chargement…</p></main>;
+  if (ecran === 'activation') return <Activation deviceId={deviceId} onActive={apresActivation} />;
   if (ecran === 'dejaOuvert') return (
     <main>
       <h1>Déjà ouverte</h1>
