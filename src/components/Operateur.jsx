@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { OPERATEURS, formaterFCFA, soldeOperateur } from '../domain/ledger.js';
 import {
   enregistrerSoldeInitial, enregistrerRecharge, creerTransfert, annulerTransfert,
-  modifierTransfert, changerStatutPaiement, lireMouvements, lireTransferts, nouvelleCle,
+  modifierTransfert, modifierRecharge, changerStatutPaiement, lireMouvements, lireTransferts, nouvelleCle,
 } from '../db/repository.js';
 
 const TYPES = { SOLDE_INITIAL: 'Solde initial', RECHARGEMENT: 'Rechargement', TRANSFERT: 'Transfert', ANNULATION: 'Annulation' };
@@ -89,9 +89,20 @@ export default function Operateur({ operateur, onRetour }) {
           )}
           <h3>Mouvements</h3>
           {[...mouvements].sort((a, b) => b.dateHeure.localeCompare(a.dateHeure)).map((m) => (
-            <div className="ligne" key={m.id}>
-              <span>{TYPES[m.type]}<br /><small className="info">{dateFr(m.dateHeure)}</small></span>
-              <strong className={m.montant < 0 ? 'neg' : 'pos'}>{m.montant > 0 ? '+' : ''}{formaterFCFA(m.montant)}</strong>
+            <div className="carte" key={m.id} style={{ padding: '10px 12px' }}>
+              <div className="ligne" style={{ margin: 0, padding: 0, background: 'none' }}>
+                <span>{TYPES[m.type]}<br /><small className="info">{dateFr(m.dateHeure)}</small></span>
+                <strong className={m.montant < 0 ? 'neg' : 'pos'}>{m.montant > 0 ? '+' : ''}{formaterFCFA(m.montant)}</strong>
+              </div>
+              {m.type === 'RECHARGEMENT' && (
+                <div style={{ marginTop: 6 }}>
+                  <button className="secondaire petit" onClick={() => setEditId(editId === m.id ? null : m.id)}>Modifier</button>
+                </div>
+              )}
+              {editId === m.id && (
+                <FormModifierRecharge mouvement={m} occupe={occupe} onSubmit={(nouveauMontant, motif) =>
+                  agir(() => modifierRecharge({ operateur, mouvementId: m.id, nouveauMontant, motif, cle: nouvelleCle() }), 'Recharge modifiée.')} />
+              )}
             </div>
           ))}
           {mouvements.length === 0 && <p className="info">Aucun mouvement.</p>}
@@ -288,6 +299,20 @@ function Historique({ transferts, filtres, setFiltres, occupe, editId, setEditId
       ))}
       {liste.length === 0 && <p className="info">Aucun transfert ne correspond.</p>}
     </>
+  );
+}
+
+function FormModifierRecharge({ mouvement, occupe, onSubmit }) {
+  const [v, setV] = useState({ montant: String(mouvement.montant), motif: '' });
+  return (
+    <form className="bloc-edition" style={{ marginTop: 8 }} onSubmit={(e) => {
+      e.preventDefault();
+      onSubmit(Number(v.montant.replace(/\s/g, '')), v.motif);
+    }}>
+      <label>Nouveau montant (FCFA)<input inputMode="numeric" value={v.montant} onChange={(e) => setV({ ...v, montant: e.target.value })} /></label>
+      <label>Motif de la correction<input placeholder="Au moins 3 caractères" value={v.motif} onChange={(e) => setV({ ...v, motif: e.target.value })} /></label>
+      <button type="submit" disabled={occupe}>Enregistrer la correction</button>
+    </form>
   );
 }
 

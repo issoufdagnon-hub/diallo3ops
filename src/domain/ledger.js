@@ -282,6 +282,48 @@ export function planifierModification({ mouvements, transferts, ctx, transfertId
   };
 }
 
+// Modifier un rechargement = ajouter un mouvement compensateur (−ancien montant) + nouveau rechargement.
+// L'ancien mouvement reste dans le journal pour l'audit.
+export function planifierModificationRecharge({ mouvements, ctx, mouvementId, nouveauMontant, motif }) {
+  verifierMontant(nouveauMontant);
+  verifierMotif(motif);
+  const ancien = mouvements.find((m) => m.id === mouvementId);
+  if (!ancien) erreur('Mouvement introuvable.');
+  if (ancien.type !== TYPE_MOUVEMENT.RECHARGEMENT) erreur('Seul un rechargement peut être modifié ici.');
+
+  const operateur = ancien.operateur;
+  const disponible = soldeOperateur(mouvements, operateur);
+  const difference = nouveauMontant - ancien.montant;
+  // Si le nouveau montant est inférieur, le solde augmente (pas de problème).
+  // Si le nouveau montant est supérieur, le solde diminue (vérifier qu'on ne passe pas en négatif).
+  if (difference < 0 && disponible + difference < 0) {
+    erreur(`Modification refusée : le solde deviendrait négatif (${formaterFCFA(disponible + difference)}).`);
+  }
+
+  // Compensation : annule l'ancien rechargement
+  const compensation = mouvement(ctx, {
+    type: TYPE_MOUVEMENT.ANNULATION,
+    operateur,
+    montant: -ancien.montant,
+    referenceId: null,
+    motif: `Correction recharge : ${motif.trim()}`,
+  });
+  // Nouveau rechargement avec le bon montant
+  const nouveau = mouvement(ctx, {
+    type: TYPE_MOUVEMENT.RECHARGEMENT,
+    operateur,
+    montant: nouveauMontant,
+  });
+  return {
+    ...planVide(),
+    mouvements: [compensation, nouveau],
+    audit: [
+      trace(ctx, { action: 'MODIFICATION_RECHARGE', entite: 'mouvement', entiteId: ancien.id, avant: ancien, apres: nouveau, motif: motif.trim() }),
+    ],
+    resultat: { ancienId: ancien.id, nouveauId: nouveau.id },
+  };
+}
+
 // Le statut de paiement du client ne touche jamais au solde de l'opérateur.
 export function planifierChangementPaiement({ transferts, ctx, transfertId, statutPaiement }) {
   verifierStatutPaiement(statutPaiement);

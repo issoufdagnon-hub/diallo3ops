@@ -81,6 +81,10 @@ export async function modifierTransfert({ transfertId, champs, motif, cle }) {
     planifier: (d) => ledger.planifierModification({ ...d, transfertId, champs, motif }) });
 }
 
+export const modifierRecharge = ({ operateur, mouvementId, nouveauMontant, motif, cle }) =>
+  executer({ cle, operateur, type: 'MODIFICATION_RECHARGE',
+    planifier: (d) => ledger.planifierModificationRecharge({ ...d, mouvementId, nouveauMontant, motif }) });
+
 export async function changerStatutPaiement({ transfertId, statutPaiement, cle }) {
   const operateur = await operateurDuTransfert(transfertId);
   return executer({ cle, operateur, type: 'PAIEMENT',
