@@ -65,6 +65,6 @@ jobs:
         run: |
           cp android/app/build/outputs/apk/debug/app-debug.apk diallo3ops-${{ github.run_number }}.apk
           gh release create "v${{ github.run_number }}" "diallo3ops-${{ github.run_number }}.apk" \
-            --title "APK DIALLO 3 OPERATEURS v${{ github.run_number }}" \
+            --title "Gestion Crédit 3 Opérateurs v${{ github.run_number }}" \
             --notes "Télécharger le fichier .apk et l'installer sur le téléphone." \
             --repo "${{ github.repository }}"
