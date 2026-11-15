@@ -85,6 +85,10 @@ export const modifierRecharge = ({ operateur, mouvementId, nouveauMontant, motif
   executer({ cle, operateur, type: 'MODIFICATION_RECHARGE',
     planifier: (d) => ledger.planifierModificationRecharge({ ...d, mouvementId, nouveauMontant, motif }) });
 
+export const annulerRecharge = ({ operateur, mouvementId, motif, cle }) =>
+  executer({ cle, operateur, type: 'ANNULATION_RECHARGE',
+    planifier: (d) => ledger.planifierAnnulationRecharge({ ...d, mouvementId, motif }) });
+
 export async function changerStatutPaiement({ transfertId, statutPaiement, cle }) {
   const operateur = await operateurDuTransfert(transfertId);
   return executer({ cle, operateur, type: 'PAIEMENT',

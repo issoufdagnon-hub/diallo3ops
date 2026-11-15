@@ -324,6 +324,37 @@ export function planifierModificationRecharge({ mouvements, ctx, mouvementId, no
   };
 }
 
+// Annuler un rechargement = ajouter un mouvement compensateur (−montant).
+// L'ancien mouvement reste dans le journal pour l'audit.
+export function planifierAnnulationRecharge({ mouvements, ctx, mouvementId, motif }) {
+  verifierMotif(motif);
+  const ancien = mouvements.find((m) => m.id === mouvementId);
+  if (!ancien) erreur('Mouvement introuvable.');
+  if (ancien.type !== TYPE_MOUVEMENT.RECHARGEMENT) erreur('Seul un rechargement peut être annulé ici.');
+
+  const operateur = ancien.operateur;
+  const disponible = soldeOperateur(mouvements, operateur);
+  if (disponible - ancien.montant < 0) {
+    erreur(`Annulation refusée : le solde deviendrait négatif (${formaterFCFA(disponible - ancien.montant)}).`);
+  }
+
+  const compensation = mouvement(ctx, {
+    type: TYPE_MOUVEMENT.ANNULATION,
+    operateur,
+    montant: -ancien.montant,
+    referenceId: null,
+    motif: `Annulation recharge : ${motif.trim()}`,
+  });
+  return {
+    ...planVide(),
+    mouvements: [compensation],
+    audit: [
+      trace(ctx, { action: 'ANNULATION_RECHARGE', entite: 'mouvement', entiteId: ancien.id, avant: ancien, apres: null, motif: motif.trim() }),
+    ],
+    resultat: { ancienId: ancien.id, compensationId: compensation.id },
+  };
+}
+
 // Le statut de paiement du client ne touche jamais au solde de l'opérateur.
 export function planifierChangementPaiement({ transferts, ctx, transfertId, statutPaiement }) {
   verifierStatutPaiement(statutPaiement);

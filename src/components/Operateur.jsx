@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { OPERATEURS, formaterFCFA, soldeOperateur } from '../domain/ledger.js';
 import {
   enregistrerSoldeInitial, enregistrerRecharge, creerTransfert, annulerTransfert,
-  modifierTransfert, modifierRecharge, changerStatutPaiement, lireMouvements, lireTransferts, nouvelleCle,
+  modifierTransfert, modifierRecharge, annulerRecharge, changerStatutPaiement, lireMouvements, lireTransferts, nouvelleCle,
 } from '../db/repository.js';
 
 const TYPES = { SOLDE_INITIAL: 'Solde initial', RECHARGEMENT: 'Rechargement', TRANSFERT: 'Transfert', ANNULATION: 'Annulation' };
@@ -95,8 +95,13 @@ export default function Operateur({ operateur, onRetour }) {
                 <strong className={m.montant < 0 ? 'neg' : 'pos'}>{m.montant > 0 ? '+' : ''}{formaterFCFA(m.montant)}</strong>
               </div>
               {m.type === 'RECHARGEMENT' && (
-                <div style={{ marginTop: 6 }}>
+                <div style={{ marginTop: 6, display: 'flex', gap: 8 }}>
                   <button className="secondaire petit" onClick={() => setEditId(editId === m.id ? null : m.id)}>Modifier</button>
+                  <button className="danger petit" disabled={occupe} onClick={() => {
+                    const motif = window.prompt("Motif de l'annulation (au moins 3 caractères) :");
+                    if (motif === null) return;
+                    agir(() => annulerRecharge({ operateur, mouvementId: m.id, motif, cle: nouvelleCle() }), 'Recharge annulée. Le montant a été retiré du solde.');
+                  }}>Annuler</button>
                 </div>
               )}
               {editId === m.id && (
