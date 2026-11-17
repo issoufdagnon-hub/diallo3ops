@@ -167,8 +167,7 @@ function Bord({ solde, mouvements, transferts, actifs, filtres, setFiltres, setO
   const rech = filtres.recherche.trim().toLowerCase();
   const liste = [...transferts]
     .sort((a, b) => b.dateCreation.localeCompare(a.dateCreation))
-    .filter((t) => !rech || t.nom.toLowerCase().includes(rech) || t.numero.includes(rech))
-    .slice(0, 30);
+    .filter((t) => !rech || t.nom.toLowerCase().includes(rech) || t.numero.includes(rech));
 
   return (
     <>
